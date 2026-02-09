@@ -4,9 +4,13 @@ import random
 from collections import deque
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-from httpx import AsyncClient
 
 TOKEN = os.getenv("BOT_TOKEN")
+
+if not TOKEN:
+    raise RuntimeError("❌ BOT_TOKEN NÃO DEFINIDO NAS ENV VARS")
+
+print("🔥 BOT INICIANDO...")
 
 # ================= PERSONALIDADE =================
 
@@ -62,8 +66,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ULTIMO_CHAT_ID = update.effective_chat.id
     await update.message.reply_text("💥 BOT CAOS ABSOLUTO DIVINO ONLINE — USE /convocar")
 
-# ================= CONVOCAÇÃO =================
-
 async def executar_convocacao(bot, chat_id):
     for tentativa in range(3):
         try:
@@ -83,7 +85,6 @@ async def executar_convocacao(bot, chat_id):
                 await bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=efeito)
 
             frase = random.choice(frases_finais)
-
             mencoes = " ".join(list(usuarios_marcados)[:20]) if usuarios_marcados else "@everyone ⚠️"
 
             await bot.edit_message_text(
@@ -94,11 +95,11 @@ async def executar_convocacao(bot, chat_id):
 
             await bot.send_animation(chat_id=chat_id, animation=random.choice(gifs_caos))
 
-            print("🔥 Convocação executada com sucesso")
+            print("🔥 Convocação executada")
             return
 
         except Exception as e:
-            print(f"⚠️ Tentativa {tentativa+1} falhou:", e)
+            print("⚠️ Falha convocação:", e)
             await asyncio.sleep(4)
 
 async def convocar(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -107,11 +108,7 @@ async def convocar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await executar_convocacao(context.bot, ULTIMO_CHAT_ID)
 
 async def caos(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global ULTIMO_CHAT_ID
-    ULTIMO_CHAT_ID = update.effective_chat.id
     await update.message.reply_text(random.choice(respostas_caos))
-
-# ================= IA AUTOMÁTICA =================
 
 async def responder_automatico(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global ULTIMO_CHAT_ID
@@ -128,11 +125,9 @@ async def responder_automatico(update: Update, context: ContextTypes.DEFAULT_TYP
     texto = update.message.text.lower()
     memoria.append(texto)
 
-    chance = random.randint(1, 100)
-
     gatilhos = ["bot", "caos", "convocar", "morto", "reviver", "npc"]
 
-    if any(g in texto for g in gatilhos) or chance < 22:
+    if any(g in texto for g in gatilhos) or random.randint(1, 100) < 22:
         resposta = random.choice(respostas_caos)
 
         if "amor" in texto:
@@ -148,36 +143,24 @@ async def responder_automatico(update: Update, context: ContextTypes.DEFAULT_TYP
 
         await update.message.reply_text(resposta)
 
-# ================= AUTO CONVOCAÇÃO =================
+# ================= LOOPS =================
 
 async def convocacao_loop(app):
     await asyncio.sleep(45)
-
     while True:
         if ULTIMO_CHAT_ID:
-            try:
-                await executar_convocacao(app.bot, ULTIMO_CHAT_ID)
-            except:
-                pass
-
-        await asyncio.sleep(60 * 25)
-
-# ================= REVIVER GRUPO =================
+            await executar_convocacao(app.bot, ULTIMO_CHAT_ID)
+        await asyncio.sleep(1500)
 
 async def revive_grupo(app):
     await asyncio.sleep(60)
-
     while True:
         if ULTIMO_CHAT_ID and len(memoria) < 6:
-            try:
-                await app.bot.send_message(
-                    chat_id=ULTIMO_CHAT_ID,
-                    text="💀 GRUPO MORTO DETECTADO... REVIVENDO COM CAOS 🔥"
-                )
-            except:
-                pass
-
-        await asyncio.sleep(60 * 15)
+            await app.bot.send_message(
+                chat_id=ULTIMO_CHAT_ID,
+                text="💀 GRUPO MORTO DETECTADO... REVIVENDO COM CAOS 🔥"
+            )
+        await asyncio.sleep(900)
 
 # ================= MAIN =================
 
@@ -196,5 +179,7 @@ def main():
         asyncio.create_task(revive_grupo(app))
 
     app.post_init = post_init
-
     app.run_polling()
+
+if __name__ == "__main__":
+    main()
