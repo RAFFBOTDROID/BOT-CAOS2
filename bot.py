@@ -184,8 +184,7 @@ async def revive_grupo(app):
 def main():
     print("💥 BOT CAOS ABSOLUTO DIVINO ONLINE")
 
-    client = AsyncClient(proxies=None)
-    app = ApplicationBuilder().token(TOKEN).client(client).build()
+    app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("convocar", convocar))
@@ -199,6 +198,3 @@ def main():
     app.post_init = post_init
 
     app.run_polling()
-
-if __name__ == "__main__":
-    main()
