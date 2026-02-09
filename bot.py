@@ -55,7 +55,7 @@ gifs_caos = [
 
 # ================= MEMÓRIA =================
 
-memoria = deque(maxlen=700)
+memoria = deque(maxlen=1200)
 usuarios_marcados = set()
 ULTIMO_CHAT_ID = None
 
@@ -85,7 +85,7 @@ async def executar_convocacao(bot, chat_id):
                 await bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=efeito)
 
             frase = random.choice(frases_finais)
-            mencoes = " ".join(list(usuarios_marcados)[:20]) if usuarios_marcados else "@everyone ⚠️"
+            mencoes = " ".join(list(usuarios_marcados)[:25]) if usuarios_marcados else "@everyone ⚠️"
 
             await bot.edit_message_text(
                 chat_id=chat_id,
@@ -127,7 +127,7 @@ async def responder_automatico(update: Update, context: ContextTypes.DEFAULT_TYP
 
     gatilhos = ["bot", "caos", "convocar", "morto", "reviver", "npc"]
 
-    if any(g in texto for g in gatilhos) or random.randint(1, 100) < 22:
+    if any(g in texto for g in gatilhos) or random.randint(1, 100) < 25:
         resposta = random.choice(respostas_caos)
 
         if "amor" in texto:
@@ -146,11 +146,11 @@ async def responder_automatico(update: Update, context: ContextTypes.DEFAULT_TYP
 # ================= LOOPS =================
 
 async def convocacao_loop(app):
-    await asyncio.sleep(45)
+    await asyncio.sleep(40)
     while True:
         if ULTIMO_CHAT_ID:
             await executar_convocacao(app.bot, ULTIMO_CHAT_ID)
-        await asyncio.sleep(1500)
+        await asyncio.sleep(1200)
 
 async def revive_grupo(app):
     await asyncio.sleep(60)
@@ -162,23 +162,27 @@ async def revive_grupo(app):
             )
         await asyncio.sleep(900)
 
+async def post_init(app):
+    asyncio.create_task(convocacao_loop(app))
+    asyncio.create_task(revive_grupo(app))
+
 # ================= MAIN =================
 
 def main():
     print("💥 BOT CAOS ABSOLUTO DIVINO ONLINE")
 
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = (
+        ApplicationBuilder()
+        .token(TOKEN)
+        .post_init(post_init)
+        .build()
+    )
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("convocar", convocar))
     app.add_handler(CommandHandler("caos", caos))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_automatico))
 
-    async def post_init(app):
-        asyncio.create_task(convocacao_loop(app))
-        asyncio.create_task(revive_grupo(app))
-
-    app.post_init = post_init
     app.run_polling()
 
 if __name__ == "__main__":
