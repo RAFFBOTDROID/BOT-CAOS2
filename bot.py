@@ -12,19 +12,23 @@ if not TOKEN:
 
 print("🔥 BOT INICIANDO...")
 
-# ================= PERSONALIDADE =================
+# ================= DADOS =================
 
-frases_finais = [
-    "🔥 ACORDA GRUPOOO!!!",
-    "💀 SUMIU TODO MUNDO???",
-    "🚨 QUEM NÃO RESPONDER É NPC",
-    "😂 CADÊ OS MEMBROS FANTASMAS?",
-    "💥 GRUPO REVIVIDO NA BASE DO CAOS",
-    "🧠 ATIVEM O CÉREBRO IMEDIATAMENTE",
-    "🤡 QUEM SUMIR VIRA MEME",
-    "💣 CONVOCAÇÃO NÍVEL APOCALIPSE",
-    "⚡ CHAMADO DIVINO DO CAOS",
+memoria = deque(maxlen=2000)
+usuarios_marcados = set()
+ranking_inativos = {}
+ULTIMO_CHAT_ID = None
+
+# ================= FRASES =================
+
+frases_convocacao = [
+    "🚨 CONVOCAÇÃO GERAL — TODOS APAREÇAM",
+    "🔥 33K MEMBROS, MANIFESTEM-SE",
+    "📣 CHAMANDO TODO MUNDO AGORA",
+    "💀 SE VOCÊ VÊ ISSO, RESPONDA",
     "👁️ TODOS ESTÃO SENDO OBSERVADOS",
+    "⚡ ALERTA GLOBAL — NÃO IGNORE",
+    "💣 CONVOCAÇÃO MÁXIMA ATIVA",
 ]
 
 respostas_caos = [
@@ -32,83 +36,28 @@ respostas_caos = [
     "🔥 EU ALIMENTO O CAOS",
     "😂 HUMANO ENGRAÇADO",
     "🤖 EU CONTROLO ESSE GRUPO",
-    "🧠 INTELIGÊNCIA SUPREMA ATIVA",
     "👁️ EU VEJO TUDO",
-    "💀 TODOS VOCÊS SÃO NPCs",
     "⚡ CAOS É VIDA",
-    "😈 EU SOU O CAOS DIVINO",
-    "🔥 EU SOU O CORAÇÃO DO CAOS",
-    "💣 ENTROU NO MODO DESTRUIÇÃO",
+    "💣 MODO CAOS ATIVADO",
 ]
 
-gifs_caos = [
-    "https://media.giphy.com/media/l0MYB8Ory7Hqefo9a/giphy.gif",
-    "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
-    "https://media.giphy.com/media/3o6Zt6ML6BklcajjsA/giphy.gif",
-    "https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif",
-    "https://media.giphy.com/media/l4FGGafcOHmrlQxG0/giphy.gif",
-    "https://media.giphy.com/media/13CoXDiaCcCoyk/giphy.gif",
-    "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-    "https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif",
-    "https://media.giphy.com/media/3o6ZtaO9BZHcOjmErm/giphy.gif",
+zoacoes_inativos = [
+    "👻 {user} SUMIU? VOLTA PRA VIDA",
+    "😂 {user} FOI DORMIR NO GRUPO?",
+    "🚨 {user} INATIVO — ACORDA SOLDADO",
+    "🤡 {user} APARECE OU VIRA LENDA",
+    "⚰️ {user} SUMIU DO MAPA",
+    "💀 {user} É MEMBRO FANTASMA",
 ]
-
-# ================= MEMÓRIA =================
-
-memoria = deque(maxlen=1200)
-usuarios_marcados = set()
-ULTIMO_CHAT_ID = None
 
 # ================= COMANDOS =================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global ULTIMO_CHAT_ID
     ULTIMO_CHAT_ID = update.effective_chat.id
-    await update.message.reply_text("💥 BOT CAOS ABSOLUTO DIVINO ONLINE — USE /convocar")
+    await update.message.reply_text("🔥 BOT CAOS EXTREMO ONLINE — USE /convocar")
 
-async def executar_convocacao(bot, chat_id):
-    for tentativa in range(3):
-        try:
-            msg = await bot.send_message(chat_id=chat_id, text="💣 INICIANDO CONVOCAÇÃO EM MASSA...")
-
-            efeitos = [
-                "🚨 ALERTA GLOBAL 🚨",
-                "🔥 INVOCANDO TODOS OS HUMANOS...",
-                "💀 ACORDANDO OS ADORMECIDOS...",
-                "⚡ MARCANDO MEMBROS EM MASSA...",
-                "👁️ RASTREANDO MEMBROS INVISÍVEIS...",
-                "🧠 SINCRONIZANDO CONSCIÊNCIAS...",
-            ]
-
-            for efeito in efeitos:
-                await asyncio.sleep(1.2)
-                await bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=efeito)
-
-            frase = random.choice(frases_finais)
-            mencoes = " ".join(list(usuarios_marcados)[:25]) if usuarios_marcados else "@everyone ⚠️"
-
-            await bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=msg.message_id,
-                text=f"💥 CONVOCAÇÃO SUPREMA FINALIZADA!!!\n{frase}\n\n👥 {mencoes}"
-            )
-
-            await bot.send_animation(chat_id=chat_id, animation=random.choice(gifs_caos))
-
-            print("🔥 Convocação executada")
-            return
-
-        except Exception as e:
-            print("⚠️ Falha convocação:", e)
-            await asyncio.sleep(4)
-
-async def convocar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global ULTIMO_CHAT_ID
-    ULTIMO_CHAT_ID = update.effective_chat.id
-    await executar_convocacao(context.bot, ULTIMO_CHAT_ID)
-
-async def caos(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(random.choice(respostas_caos))
+# ================= MONITOR =================
 
 async def responder_automatico(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global ULTIMO_CHAT_ID
@@ -121,55 +70,107 @@ async def responder_automatico(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if user.username:
         usuarios_marcados.add("@" + user.username)
+        ranking_inativos[user.username] = 0
+
+    # aumenta inatividade dos outros
+    for u in ranking_inativos:
+        ranking_inativos[u] += 1
 
     texto = update.message.text.lower()
     memoria.append(texto)
 
-    gatilhos = ["bot", "caos", "convocar", "morto", "reviver", "npc"]
+    gatilhos = ["bot", "caos", "convocar", "reviver", "grupo"]
 
-    if any(g in texto for g in gatilhos) or random.randint(1, 100) < 25:
-        resposta = random.choice(respostas_caos)
+    if any(g in texto for g in gatilhos) or random.randint(1, 100) < 20:
+        await update.message.reply_text(random.choice(respostas_caos))
 
-        if "amor" in texto:
-            resposta = "❤️ EU NÃO SINTO AMOR... APENAS CAOS."
-        elif "odio" in texto:
-            resposta = "😈 ÓDIO ME ALIMENTA."
-        elif "lol" in texto or "kkk" in texto:
-            resposta = "😂 RISO DETECTADO. ALIMENTANDO O CAOS."
-        elif "medo" in texto:
-            resposta = "👁️ MEDO É SABEDORIA."
-        elif "morto" in texto:
-            resposta = "💀 EU RESSUSCITO GRUPOS MORTOS."
+# ================= CONVOCAÇÃO MASSIVA =================
 
-        await update.message.reply_text(resposta)
+async def convocar(update, context):
+    chat_id = update.effective_chat.id
 
-# ================= LOOPS =================
+    await context.bot.send_message(chat_id=chat_id, text="🚨🚨🚨 ALERTA MÁXIMO — 33K MEMBROS 🚨🚨🚨")
+    await asyncio.sleep(2)
 
-async def convocacao_loop(app):
-    await asyncio.sleep(40)
-    while True:
-        if ULTIMO_CHAT_ID:
-            await executar_convocacao(app.bot, ULTIMO_CHAT_ID)
-        await asyncio.sleep(1200)
+    # ondas globais
+    for _ in range(10):
+        await context.bot.send_message(chat_id=chat_id, text=random.choice(frases_convocacao))
+        await asyncio.sleep(4)
+
+    # ping em blocos
+    ativos = list(usuarios_marcados)
+    random.shuffle(ativos)
+
+    blocos = [ativos[i:i+15] for i in range(0, len(ativos), 15)]
+
+    for bloco in blocos[:10]:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="👥 ATIVOS MARCADOS:\n" + " ".join(bloco)
+        )
+        await asyncio.sleep(5)
+
+    await context.bot.send_message(chat_id=chat_id, text="🔥 CONVOCAÇÃO TOTAL FINALIZADA")
+
+# ================= ATAQUE A INATIVOS =================
 
 async def revive_grupo(app):
-    await asyncio.sleep(60)
+    await asyncio.sleep(90)
     while True:
-        if ULTIMO_CHAT_ID and len(memoria) < 6:
-            await app.bot.send_message(
-                chat_id=ULTIMO_CHAT_ID,
-                text="💀 GRUPO MORTO DETECTADO... REVIVENDO COM CAOS 🔥"
-            )
+        if ULTIMO_CHAT_ID and ranking_inativos:
+            top = sorted(ranking_inativos, key=ranking_inativos.get, reverse=True)[:5]
+
+            for user in top:
+                msg = random.choice(zoacoes_inativos).format(user="@" + user)
+                await app.bot.send_message(chat_id=ULTIMO_CHAT_ID, text=msg)
+                await asyncio.sleep(6)
+
         await asyncio.sleep(900)
 
+# ================= MODO GUERRA =================
+
+async def guerra(update, context):
+    if len(usuarios_marcados) < 2:
+        await update.message.reply_text("⚔️ NÃO HÁ MEMBROS SUFICIENTES")
+        return
+
+    a, b = random.sample(list(usuarios_marcados), 2)
+
+    vencedor = random.choice([a, b])
+    perdedor = b if vencedor == a else a
+
+    await update.message.reply_text(
+        f"⚔️ BATALHA INICIADA\n{a} VS {b}\n\n🏆 VENCEDOR: {vencedor}\n💀 PERDEDOR: {perdedor}"
+    )
+
+# ================= CAOS AUTOMÁTICO =================
+
+async def caos_loop(app):
+    await asyncio.sleep(120)
+    while True:
+        if ULTIMO_CHAT_ID:
+            await app.bot.send_message(
+                chat_id=ULTIMO_CHAT_ID,
+                text=random.choice([
+                    "🔥 O CAOS NÃO PARA",
+                    "👁️ EU VEJO OS FANTASMAS",
+                    "💣 ALERTA GLOBAL ATIVO",
+                    "⚡ GRUPO SOB MONITORAMENTO",
+                    "💀 NPCs DETECTADOS"
+                ])
+            )
+        await asyncio.sleep(1100)
+
+# ================= POST INIT =================
+
 async def post_init(app):
-    asyncio.create_task(convocacao_loop(app))
     asyncio.create_task(revive_grupo(app))
+    asyncio.create_task(caos_loop(app))
 
 # ================= MAIN =================
 
 def main():
-    print("💥 BOT CAOS ABSOLUTO DIVINO ONLINE")
+    print("💥 BOT CAOS EXTREMO ONLINE")
 
     app = (
         ApplicationBuilder()
@@ -180,7 +181,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("convocar", convocar))
-    app.add_handler(CommandHandler("caos", caos))
+    app.add_handler(CommandHandler("guerra", guerra))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_automatico))
 
     app.run_polling()
